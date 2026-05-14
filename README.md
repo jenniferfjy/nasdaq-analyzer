@@ -2,13 +2,15 @@
 
 Simulates investing a fixed dollar amount into the NASDAQ 100 (QQQ) every trading day, computes performance metrics, and exports a beginner-friendly interactive HTML report.
 
+**Live report:** [jenniferfjy.github.io/nasdaq-analyzer](https://jenniferfjy.github.io/nasdaq-analyzer/)
+
 ## Quickstart
 
 ```bash
 uv run python QQQ.py
 ```
 
-Then open `nasdaq_dca_report.html` in any browser.
+The report is written to `docs/index.html` and auto-deploys to GitHub Pages on push.
 
 ## What the report covers
 
@@ -32,7 +34,7 @@ All tunables are in `config.py`:
 DAILY_INVESTMENT = 10        # dollars invested each trading day
 START_DATE       = "2004-01-01"
 END_DATE         = None      # None = today
-OUTPUT_FILE      = "nasdaq_dca_report.html"
+OUTPUT_FILE      = "docs/index.html"
 ```
 
 ## Project structure
@@ -54,3 +56,12 @@ trading/
 - [uv](https://github.com/astral-sh/uv) (install: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
 Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`. Running `uv run` handles the virtual environment automatically — no manual activation needed.
+
+## Updating the live site
+
+```bash
+uv run python QQQ.py
+git add docs/index.html
+git commit -m "Update report"
+git push
+```
