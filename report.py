@@ -149,13 +149,13 @@ def build_html(
 
     /* ── Sticky TOC ──────────────────────────────────────────────────────── */
     #toc {{
-      position: fixed; left: max(12px, calc(50% - 620px)); top: 50%;
+      position: fixed; left: 8px; top: 50%;
       transform: translateY(-50%); background: var(--paper);
       border: 1px solid var(--g200); border-radius: 10px;
-      padding: 14px 12px; font-family: var(--sans); font-size: 11px; line-height: 1.4;
-      z-index: 100; width: 152px; max-height: 82vh; overflow-y: auto; display: none;
+      padding: 12px 10px; font-family: var(--sans); font-size: 10px; line-height: 1.4;
+      z-index: 100; width: 118px; max-height: 82vh; overflow-y: auto; display: none;
     }}
-    @media (min-width: 1400px) {{ #toc {{ display: block; }} }}
+    @media (min-width: 1500px) {{ #toc {{ display: block; }} }}
     #toc-title {{
       font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
       color: var(--clay); font-size: 10px; margin-bottom: 10px;
