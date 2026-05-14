@@ -42,10 +42,10 @@ def build_html(
         s = mc["stats"][years]
         mc_rows += (
             f'<tr><td>{years} years</td>'
-            f'<td>${s["total_invested"]:,.0f}</td>'
-            f'<td>${s["p10"]:,.0f}</td>'
-            f'<td>${s["p50"]:,.0f}</td>'
-            f'<td>${s["p90"]:,.0f}</td>'
+            f'<td>$<span class="sc" data-base="{s["total_invested"]:.2f}">{s["total_invested"]:,.0f}</span></td>'
+            f'<td>$<span class="sc" data-base="{s["p10"]:.2f}">{s["p10"]:,.0f}</span></td>'
+            f'<td>$<span class="sc" data-base="{s["p50"]:.2f}">{s["p50"]:,.0f}</span></td>'
+            f'<td>$<span class="sc" data-base="{s["p90"]:.2f}">{s["p90"]:,.0f}</span></td>'
             f'<td>{s["pct_profitable"]:.1f}%</td></tr>\n'
         )
 
@@ -146,9 +146,73 @@ def build_html(
       border-top: 1px solid var(--g200); padding-top: 24px; margin-top: 64px;
       font-family: var(--sans); font-size: 12px; color: var(--g500); line-height: 1.6;
     }}
+
+    /* ── Sticky TOC ──────────────────────────────────────────────────────── */
+    #toc {{
+      position: fixed; left: max(12px, calc(50% - 620px)); top: 50%;
+      transform: translateY(-50%); background: var(--paper);
+      border: 1px solid var(--g200); border-radius: 10px;
+      padding: 14px 12px; font-family: var(--sans); font-size: 11px; line-height: 1.4;
+      z-index: 100; width: 152px; max-height: 82vh; overflow-y: auto; display: none;
+    }}
+    @media (min-width: 1400px) {{ #toc {{ display: block; }} }}
+    #toc-title {{
+      font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--clay); font-size: 10px; margin-bottom: 10px;
+    }}
+    #toc ul {{ list-style: none; }}
+    #toc li {{ margin-bottom: 2px; }}
+    #toc a {{
+      text-decoration: none; color: var(--g500); display: block;
+      padding: 3px 6px; border-radius: 4px; transition: background 0.15s, color 0.15s;
+    }}
+    #toc a:hover, #toc a.toc-active {{ background: var(--g100); color: var(--slate); }}
+
+    /* ── Interactive slider ──────────────────────────────────────────────── */
+    .slider-wrap {{
+      display: flex; align-items: center; gap: 12px;
+      font-family: var(--sans); font-size: 14px; margin: 20px 0 8px;
+    }}
+    #amount-label {{ font-size: 1.5rem; font-weight: 300; color: var(--clay); min-width: 90px; }}
+    input[type=range] {{ accent-color: var(--clay); width: 200px; cursor: pointer; }}
+    .slider-bounds {{ color: var(--g500); font-size: 12px; }}
+    .slider-note {{ font-family: var(--sans); font-size: 12px; color: var(--g500); font-style: italic; }}
+
+    /* ── Mobile fixes ────────────────────────────────────────────────────── */
+    @media (max-width: 720px) {{
+      body {{ font-size: 15px; padding: 0 14px 64px; }}
+      h1 {{ font-size: 1.75rem; }}
+      .hero {{ padding: 40px 0 32px; }}
+      .two-col {{ grid-template-columns: 1fr !important; }}
+      .steps {{ grid-template-columns: 1fr !important; }}
+      .stat-grid {{ grid-template-columns: repeat(2, 1fr) !important; }}
+      .glossary {{ grid-template-columns: 1fr !important; }}
+      input[type=range] {{ width: 140px; }}
+    }}
   </style>
 </head>
 <body>
+
+<nav id="toc">
+  <div id="toc-title">Contents</div>
+  <ul>
+    <li><a href="#s01">01 · Strategy</a></li>
+    <li><a href="#s02">02 · Key Numbers</a></li>
+    <li><a href="#s03">03 · Portfolio Growth</a></li>
+    <li><a href="#s04">04 · DCA vs Lump Sum</a></li>
+    <li><a href="#s05">05 · Consistency</a></li>
+    <li><a href="#s06">06 · Win Rate</a></li>
+    <li><a href="#s07">07 · Post-2020</a></li>
+    <li><a href="#s08">08 · Year-by-Year</a></li>
+    <li><a href="#s09">09 · Hot Market?</a></li>
+    <li><a href="#s10">10 · Full Comparison</a></li>
+    <li><a href="#s11">11 · Glossary</a></li>
+    <li><a href="#s12">12 · Research</a></li>
+    <li><a href="#s13">13 · Frequency</a></li>
+    <li><a href="#s14">14 · Crash Recovery</a></li>
+    <li><a href="#s15">15 · Monte Carlo</a></li>
+  </ul>
+</nav>
 
 <header class="hero">
   <div class="hero-label">Investment Analysis · NASDAQ 100</div>
@@ -157,19 +221,28 @@ def build_html(
     We simulated what would have happened if you invested just <strong>${daily_investment:.0f}</strong> every
     trading day into the NASDAQ 100 (QQQ) — starting in {start_yr}. Here's what the data says.
   </p>
-  <div class="hero-meta">Data: {prices.index[0].date()} – {prices.index[-1].date()} &nbsp;·&nbsp; {len(prices):,} trading days &nbsp;·&nbsp; Source: Yahoo Finance</div>
+  <div class="slider-wrap">
+    <span class="slider-bounds">$1</span>
+    <input type="range" id="amount-slider" min="1" max="200" value="{daily_investment:.0f}" step="1">
+    <span class="slider-bounds">$200</span>
+    <span>→ <span id="amount-label">${daily_investment:.0f}/day</span></span>
+  </div>
+  <p class="slider-note">Drag to explore different daily amounts — key dollar figures update instantly.</p>
+  <div class="hero-meta" style="margin-top:12px">Data: {prices.index[0].date()} – {prices.index[-1].date()} &nbsp;·&nbsp; {len(prices):,} trading days &nbsp;·&nbsp; Source: Yahoo Finance</div>
 </header>
 
 <div class="verdict">
-  <strong>Bottom line:</strong> Investing ${daily_investment:.0f}/day turned <strong>${final_cost:,.0f}</strong> of contributions
-  into <strong>${final_qqq:,.0f}</strong> — a <strong>{mult:.1f}× return</strong> with an average yearly growth of
+  <strong>Bottom line:</strong> Investing <span id="verdict-daily">${daily_investment:.0f}</span>/day turned
+  <strong>$<span class="sc" data-base="{final_cost:.2f}">{final_cost:,.0f}</span></strong> of contributions
+  into <strong>$<span class="sc" data-base="{final_qqq:.2f}">{final_qqq:,.0f}</span></strong>
+  — a <strong>{mult:.1f}× return</strong> with an average yearly growth of
   <strong>{cagr_val:.1f}%</strong>. There were painful crashes along the way (the worst drop was
   <strong>{max_dd_val:.1f}%</strong>), but if you held through every storm, <strong>any 5-year stretch
   was profitable {win_rates[5]:.0f}% of the time</strong>. The data strongly supports consistent
   daily investing for long-term investors who can stomach short-term swings.
 </div>
 
-<section>
+<section id="s01">
   <div class="section-label">01 · The Strategy</div>
   <h2>What is "Daily DCA"?</h2>
   <p><strong>Dollar-Cost Averaging (DCA)</strong> just means investing a fixed amount of money on a regular
@@ -189,14 +262,14 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s02">
   <div class="section-label">02 · Key Numbers</div>
   <h2>The results at a glance</h2>
   <p>These numbers are from the QQQ daily DCA simulation covering {start_yr}–{end_yr}.</p>
   <div class="stat-grid">{cards_html}</div>
 </section>
 
-<section>
+<section id="s03">
   <div class="section-label">03 · Portfolio Growth</div>
   <h2>Your money growing — and dipping — over time</h2>
   <p>The top chart shows your portfolio value versus what you actually put in. The gap between the lines is
@@ -211,7 +284,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s04">
   <div class="section-label">04 · DCA vs. Lump Sum</div>
   <h2>What if you invested everything at once?</h2>
   <p>A "lump sum" means putting all your money in on day one. Research shows this beats DCA about 2/3 of the
@@ -227,7 +300,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s05">
   <div class="section-label">05 · Consistency Over Time</div>
   <h2>Was it always a good time to be investing?</h2>
   <p>This chart asks: "For any given year, if you had been DCA-ing for the past 1, 3, or 5 years — were you
@@ -242,7 +315,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s06">
   <div class="section-label">06 · Win Rate</div>
   <h2>How often did you come out ahead?</h2>
   <p>Out of every possible start date in our dataset, what % of rolling windows ended in profit?</p>
@@ -255,7 +328,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s07">
   <div class="section-label">07 · Post-2020 Spotlight</div>
   <h2>The wild ride since 2020</h2>
   <p>The period from 2020 to today compressed several market extremes into just five years: a historic crash,
@@ -272,7 +345,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s08">
   <div class="section-label">08 · Year-by-Year</div>
   <h2>How did each year actually look?</h2>
   <p>The <strong>top chart</strong> shows QQQ's raw price change each calendar year. The <strong>bottom chart</strong>
@@ -288,13 +361,13 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s09">
   <div class="section-label">09 · The Hot Market Question</div>
   <h2>"The market looks expensive — should I wait?"</h2>
   <p>This is the most common hesitation among new investors. The market has had a strong run, valuations are elevated,
   and it feels like a bad time to start. Here's the honest picture from both sides — and what the data actually says.</p>
 
-  <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:24px 0;">
+  <div class="two-col" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin:24px 0;">
     <div style="background:var(--paper); border:1px solid var(--g200); border-top:3px solid {C["red"]}; border-radius:10px; padding:22px;">
       <div class="section-label" style="color:{C["red"]}">Bear Case — Reasons to be cautious</div>
       <ul style="font-family:var(--sans); font-size:14px; color:var(--g700); line-height:1.8; padding-left:18px; margin-top:12px;">
@@ -348,7 +421,7 @@ def build_html(
   </p>
 </section>
 
-<section>
+<section id="s10">
   <div class="section-label">10 · Full Comparison</div>
   <h2>All four strategies, side by side</h2>
   <p>Comparing QQQ vs. SPY, and DCA vs. lump sum, over the full {start_yr}–{end_yr} period.</p>
@@ -360,7 +433,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s11">
   <div class="section-label">11 · Plain-English Glossary</div>
   <h2>What do these terms mean?</h2>
   <div class="glossary">
@@ -379,7 +452,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s12">
   <div class="section-label">12 · Supporting Research</div>
   <h2>What the experts say</h2>
   <p>Our findings align with decades of academic and industry research on long-term equity investing.</p>
@@ -405,7 +478,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s13">
   <div class="section-label">13 · DCA Frequency</div>
   <h2>Does it matter how often you invest?</h2>
   <p>What if instead of investing daily, you invested weekly or monthly — but kept the same <em>annual</em> spend?
@@ -421,7 +494,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s14">
   <div class="section-label">14 · Crash &amp; Recovery</div>
   <h2>How long did it take to recover from each crash?</h2>
   <p>Every major drawdown ended with a recovery — eventually. This chart shows how long each crash took
@@ -436,7 +509,7 @@ def build_html(
   </div>
 </section>
 
-<section>
+<section id="s15">
   <div class="section-label">15 · Monte Carlo Simulation</div>
   <h2>What could the future look like?</h2>
   <p>We ran 1,000 simulations of the next {max(mc["years_list"])} years by randomly sampling from QQQ's
@@ -468,6 +541,48 @@ def build_html(
   Prices are <em>total-return adjusted</em> via Yahoo Finance (dividends and splits are factored into the price series).
   Generated {prices.index[-1].date()}.</p>
 </footer>
+
+
+<script>
+(function () {{
+  // ── Slider ──────────────────────────────────────────────────────────────
+  const BASE   = {daily_investment:.4f};
+  const slider = document.getElementById('amount-slider');
+  const label  = document.getElementById('amount-label');
+  const vDaily = document.getElementById('verdict-daily');
+
+  function fmt(n) {{
+    return '$' + Math.round(n).toLocaleString('en-US');
+  }}
+
+  slider.addEventListener('input', function () {{
+    const amt   = parseFloat(this.value);
+    const ratio = amt / BASE;
+    label.textContent = '$' + amt.toFixed(0) + '/day';
+    if (vDaily) vDaily.textContent = '$' + amt.toFixed(0);
+    document.querySelectorAll('.sc').forEach(function (el) {{
+      el.textContent = Math.round(parseFloat(el.dataset.base) * ratio).toLocaleString('en-US');
+    }});
+  }});
+
+  // ── TOC active section ──────────────────────────────────────────────────
+  const sections = Array.from(document.querySelectorAll('section[id]'));
+  const tocLinks = Array.from(document.querySelectorAll('#toc a'));
+
+  if ('IntersectionObserver' in window) {{
+    const obs = new IntersectionObserver(function (entries) {{
+      entries.forEach(function (e) {{
+        if (e.isIntersecting) {{
+          tocLinks.forEach(function (l) {{ l.classList.remove('toc-active'); }});
+          const a = document.querySelector('#toc a[href="#' + e.target.id + '"]');
+          if (a) a.classList.add('toc-active');
+        }}
+      }});
+    }}, {{ rootMargin: '0px 0px -60% 0px', threshold: 0 }});
+    sections.forEach(function (s) {{ obs.observe(s); }});
+  }}
+}})();
+</script>
 
 </body>
 </html>"""
