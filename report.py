@@ -1,6 +1,6 @@
 import pandas as pd
 
-from config import C, DAILY_INVESTMENT
+from config import C
 
 
 def build_html(
@@ -9,6 +9,7 @@ def build_html(
     qqq_dca: pd.DataFrame,
     summary_rows: list[dict],
     win_rates: dict,
+    daily_investment: float,
     chart_a: str, chart_b: str, chart_c: str,
     chart_d: str, chart_e: str, chart_f: str,
 ) -> str:
@@ -139,14 +140,14 @@ def build_html(
   <div class="hero-label">Investment Analysis · NASDAQ 100</div>
   <h1>Should you invest in the<br><em>NASDAQ every single day?</em></h1>
   <p class="hero-sub">
-    We simulated what would have happened if you invested just <strong>${DAILY_INVESTMENT}</strong> every
+    We simulated what would have happened if you invested just <strong>${daily_investment:.0f}</strong> every
     trading day into the NASDAQ 100 (QQQ) — starting in {start_yr}. Here's what the data says.
   </p>
   <div class="hero-meta">Data: {prices.index[0].date()} – {prices.index[-1].date()} &nbsp;·&nbsp; {len(prices):,} trading days &nbsp;·&nbsp; Source: Yahoo Finance</div>
 </header>
 
 <div class="verdict">
-  <strong>Bottom line:</strong> Investing ${DAILY_INVESTMENT}/day turned <strong>${final_cost:,.0f}</strong> of contributions
+  <strong>Bottom line:</strong> Investing ${daily_investment:.0f}/day turned <strong>${final_cost:,.0f}</strong> of contributions
   into <strong>${final_qqq:,.0f}</strong> — a <strong>{mult:.1f}× return</strong> with an average yearly growth of
   <strong>{cagr_val:.1f}%</strong>. There were painful crashes along the way (the worst drop was
   <strong>{max_dd_val:.1f}%</strong>), but if you held through every storm, <strong>any 5-year stretch
@@ -252,7 +253,7 @@ def build_html(
     to new highs by August 2020. The 2022 bear market (−35% for QQQ) tested conviction again — but those who
     held through it saw their DCA portfolios reach all-time highs in 2023–2025.</div>
     {chart_e}
-    <div class="chart-caption">Simulation starts fresh on 2020-01-01 with ${DAILY_INVESTMENT}/day. Annotations mark
+    <div class="chart-caption">Simulation starts fresh on 2020-01-01 with ${daily_investment:.0f}/day. Annotations mark
     major turning points. The bottom panel shows drawdown — how far the portfolio fell from its peak.</div>
   </div>
 </section>
@@ -392,8 +393,9 @@ def build_html(
 
 <footer>
   <p><strong>Disclaimer:</strong> This analysis is for educational purposes only and does not constitute financial advice.
-  Past performance does not guarantee future results. All simulations assume no taxes, transaction fees, or dividend reinvestment.
-  Prices sourced from Yahoo Finance via yfinance. Generated {prices.index[-1].date()}.</p>
+  Past performance does not guarantee future results. All simulations assume no taxes or transaction fees.
+  Prices are <em>total-return adjusted</em> via Yahoo Finance (dividends and splits are factored into the price series).
+  Generated {prices.index[-1].date()}.</p>
 </footer>
 
 </body>

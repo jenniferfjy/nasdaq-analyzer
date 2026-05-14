@@ -11,3 +11,6 @@ wheels/
 
 # Generated output (local copy only)
 nasdaq_dca_report.html
+
+# Data cache
+cache/

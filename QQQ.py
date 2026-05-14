@@ -5,13 +5,16 @@ computes performance metrics, and exports an interactive HTML report.
 
 Usage:
     uv run python QQQ.py
+    uv run python QQQ.py --amount 25 --start 2010-01-01
+    uv run python QQQ.py --output my_report.html
 """
 
+import argparse
 import os
 import warnings
 warnings.filterwarnings("ignore")
 
-from config     import DAILY_INVESTMENT, START_DATE, END_DATE, OUTPUT_FILE
+import config
 from data       import fetch_prices
 from simulation import simulate_dca, simulate_lumpsum
 from analysis   import add_rolling_cagr, compute_summary, compute_win_rates, compute_yearly_returns
@@ -19,25 +22,40 @@ import charts as ch
 from report     import build_html
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="NASDAQ Daily DCA Analyzer")
+    parser.add_argument("--amount", type=float, default=config.DAILY_INVESTMENT,
+                        help=f"Daily investment in USD (default: {config.DAILY_INVESTMENT})")
+    parser.add_argument("--start",  default=config.START_DATE,
+                        help=f"Start date YYYY-MM-DD (default: {config.START_DATE})")
+    parser.add_argument("--end",    default=config.END_DATE,
+                        help="End date YYYY-MM-DD (default: today)")
+    parser.add_argument("--output", default=config.OUTPUT_FILE,
+                        help=f"Output HTML path (default: {config.OUTPUT_FILE})")
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
+
     # ── Fetch ──────────────────────────────────────────────────────────────────
     print("Fetching historical data...")
-    prices = fetch_prices(["QQQ", "SPY"], START_DATE, END_DATE)
+    prices = fetch_prices(["QQQ", "SPY"], args.start, args.end)
 
     # ── Simulate ───────────────────────────────────────────────────────────────
-    qqq_dca = simulate_dca(prices["QQQ"], DAILY_INVESTMENT)
-    spy_dca = simulate_dca(prices["SPY"], DAILY_INVESTMENT)
+    qqq_dca = simulate_dca(prices["QQQ"], args.amount)
+    spy_dca = simulate_dca(prices["SPY"], args.amount)
     qqq_ls  = simulate_lumpsum(prices["QQQ"], qqq_dca["cum_cost"].iloc[-1])
     spy_ls  = simulate_lumpsum(prices["SPY"], spy_dca["cum_cost"].iloc[-1])
 
     prices_2020  = prices[prices.index >= "2020-01-01"]
-    qqq_dca_2020 = simulate_dca(prices_2020["QQQ"], DAILY_INVESTMENT)
-    spy_dca_2020 = simulate_dca(prices_2020["SPY"], DAILY_INVESTMENT)
+    qqq_dca_2020 = simulate_dca(prices_2020["QQQ"], args.amount)
+    spy_dca_2020 = simulate_dca(prices_2020["SPY"], args.amount)
 
     # ── Analyse ────────────────────────────────────────────────────────────────
-    qqq_dca     = add_rolling_cagr(qqq_dca)
-    win_rates   = compute_win_rates(qqq_dca)
-    yearly_data = compute_yearly_returns(prices["QQQ"], qqq_dca)
+    qqq_dca      = add_rolling_cagr(qqq_dca)
+    win_rates    = compute_win_rates(qqq_dca)
+    yearly_data  = compute_yearly_returns(prices["QQQ"], qqq_dca)
     summary_rows = [
         compute_summary(qqq_dca, "QQQ DCA"),
         compute_summary(spy_dca, "SPY DCA"),
@@ -57,11 +75,13 @@ def main() -> None:
     # ── Report ─────────────────────────────────────────────────────────────────
     html = build_html(
         prices=prices, qqq_dca=qqq_dca, summary_rows=summary_rows, win_rates=win_rates,
+        daily_investment=args.amount,
         chart_a=chart_a, chart_b=chart_b, chart_c=chart_c,
         chart_d=chart_d, chart_e=chart_e, chart_f=chart_f,
     )
 
-    output_path = os.path.join(os.path.dirname(__file__), OUTPUT_FILE)
+    output_path = os.path.join(os.path.dirname(__file__), args.output)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w") as f:
         f.write(html)
     print(f"\nDone! Report saved to: {output_path}")
