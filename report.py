@@ -149,24 +149,27 @@ def build_html(
 
     /* ── Sticky TOC ──────────────────────────────────────────────────────── */
     #toc {{
-      position: fixed; left: 8px; top: 50%;
+      position: fixed; left: 16px; top: 50%;
       transform: translateY(-50%); background: var(--paper);
-      border: 1px solid var(--g200); border-radius: 10px;
-      padding: 12px 10px; font-family: var(--sans); font-size: 10px; line-height: 1.4;
-      z-index: 100; width: 118px; max-height: 82vh; overflow-y: auto; display: none;
+      border: 1px solid var(--g200); border-radius: 12px;
+      padding: 18px 14px; font-family: var(--sans); font-size: 12px; line-height: 1.5;
+      z-index: 100; width: 164px; max-height: 85vh; overflow-y: auto; display: none;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     }}
-    @media (min-width: 1500px) {{ #toc {{ display: block; }} }}
+    @media (min-width: 1560px) {{ #toc {{ display: block; }} }}
     #toc-title {{
       font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--clay); font-size: 10px; margin-bottom: 10px;
+      color: var(--clay); font-size: 10px; margin-bottom: 12px;
     }}
     #toc ul {{ list-style: none; }}
-    #toc li {{ margin-bottom: 2px; }}
+    #toc li {{ margin-bottom: 1px; }}
     #toc a {{
       text-decoration: none; color: var(--g500); display: block;
-      padding: 3px 6px; border-radius: 4px; transition: background 0.15s, color 0.15s;
+      padding: 5px 8px; border-radius: 6px; transition: background 0.15s, color 0.15s;
     }}
-    #toc a:hover, #toc a.toc-active {{ background: var(--g100); color: var(--slate); }}
+    #toc a:hover, #toc a.toc-active {{
+      background: var(--g100); color: var(--slate); font-weight: 600;
+    }}
 
     /* ── Interactive slider ──────────────────────────────────────────────── */
     .slider-wrap {{
