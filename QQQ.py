@@ -32,7 +32,38 @@ def parse_args() -> argparse.Namespace:
                         help="End date YYYY-MM-DD (default: today)")
     parser.add_argument("--output", default=config.OUTPUT_FILE,
                         help=f"Output HTML path (default: {config.OUTPUT_FILE})")
-    return parser.parse_args()
+    args = parser.parse_args()
+    _validate_args(args)
+    return args
+
+
+def _validate_args(args: argparse.Namespace) -> None:
+    import sys
+    from datetime import datetime
+
+    if args.amount <= 0:
+        print(f"Error: --amount must be greater than 0 (got {args.amount})")
+        sys.exit(1)
+
+    try:
+        start_dt = datetime.strptime(args.start, "%Y-%m-%d")
+    except ValueError:
+        print(f"Error: --start '{args.start}' is not a valid date. Use YYYY-MM-DD format.")
+        sys.exit(1)
+
+    if args.end is not None:
+        try:
+            end_dt = datetime.strptime(args.end, "%Y-%m-%d")
+        except ValueError:
+            print(f"Error: --end '{args.end}' is not a valid date. Use YYYY-MM-DD format.")
+            sys.exit(1)
+        if end_dt <= start_dt:
+            print(f"Error: --end ({args.end}) must be after --start ({args.start}).")
+            sys.exit(1)
+
+    if start_dt.year < 1993:
+        print(f"Error: --start must be 1993-01-01 or later (QQQ launched in March 1999).")
+        sys.exit(1)
 
 
 def main() -> None:
