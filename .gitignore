@@ -9,5 +9,5 @@ wheels/
 # Virtual environments
 .venv
 
-# Generated output
+# Generated output (local copy only)
 nasdaq_dca_report.html

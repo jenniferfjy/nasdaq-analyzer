@@ -1,7 +1,7 @@
 DAILY_INVESTMENT = 10
 START_DATE       = "2004-01-01"
 END_DATE         = None          # None = today
-OUTPUT_FILE      = "nasdaq_dca_report.html"
+OUTPUT_FILE      = "docs/index.html"
 
 # Design palette — thariqs.github.io inspired
 C = {
