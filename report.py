@@ -12,6 +12,8 @@ def build_html(
     daily_investment: float,
     chart_a: str, chart_b: str, chart_c: str,
     chart_d: str, chart_e: str, chart_f: str,
+    chart_g: str, chart_h: str, chart_i: str,
+    mc: dict,
 ) -> str:
     start_yr   = prices.index[0].year
     end_yr     = prices.index[-1].year
@@ -34,6 +36,18 @@ def build_html(
     <div class="stat-label">{label}</div>
     <div class="stat-sub">{sub}</div>
   </div>""" for label, val, sub, color in stat_cards)
+
+    mc_rows = ""
+    for years in mc["years_list"]:
+        s = mc["stats"][years]
+        mc_rows += (
+            f'<tr><td>{years} years</td>'
+            f'<td>${s["total_invested"]:,.0f}</td>'
+            f'<td>${s["p10"]:,.0f}</td>'
+            f'<td>${s["p50"]:,.0f}</td>'
+            f'<td>${s["p90"]:,.0f}</td>'
+            f'<td>{s["pct_profitable"]:.1f}%</td></tr>\n'
+        )
 
     table_rows = ""
     for i, row in enumerate(summary_rows):
@@ -388,6 +402,63 @@ def build_html(
     <div class="research-card"><div class="research-source">Fama &amp; French · Academic Research</div>
       <h3>Long-term equity premium is real</h3>
       <p>Nobel laureate Eugene Fama's research confirms that equities have historically delivered a meaningful premium over safer assets over long periods. Patient, diversified equity investing has been rewarded — but the key word is <em>patient</em>.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">13 · DCA Frequency</div>
+  <h2>Does it matter how often you invest?</h2>
+  <p>What if instead of investing daily, you invested weekly or monthly — but kept the same <em>annual</em> spend?
+  The amounts are scaled so each strategy puts in the same total dollars per year: ${daily_investment:.0f}/day
+  becomes ${daily_investment * 252 / 52:.2f}/week or ${daily_investment * 252 / 12:.2f}/month.</p>
+  <div class="chart-card">
+    <div class="chart-note"><strong>Key finding:</strong> Daily DCA often edges out weekly and monthly over long
+    horizons because it buys into more price dips, but the differences are usually small.
+    The <em>consistency</em> of any schedule matters far more than its frequency.</div>
+    {chart_g}
+    <div class="chart-caption">All three strategies invest the same total amount annually.
+    Final bar chart shows the ending portfolio value for each frequency.</div>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">14 · Crash &amp; Recovery</div>
+  <h2>How long did it take to recover from each crash?</h2>
+  <p>Every major drawdown ended with a recovery — eventually. This chart shows how long each crash took
+  to reach its worst point (red bar) and how many more days it took to climb back to the previous high (green bar).</p>
+  <div class="chart-card">
+    <div class="chart-note"><strong>The dot-com crash was the worst:</strong> QQQ fell 83% and took over a decade
+    to fully recover. More recent crashes — 2020, 2022 — recovered within 1–2 years. Diversifying into SPY reduces
+    the depth and duration of these drawdowns.</div>
+    {chart_h}
+    <div class="chart-caption">Red segment = calendar days from peak to trough. Green segment = days from trough
+    back to a new all-time high. Crashes that have not yet recovered show "Ongoing".</div>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">15 · Monte Carlo Simulation</div>
+  <h2>What could the future look like?</h2>
+  <p>We ran 1,000 simulations of the next {max(mc["years_list"])} years by randomly sampling from QQQ's
+  historical daily return distribution. Each simulation is a possible future — not a prediction, but a range
+  of plausible outcomes based on past volatility and average returns.</p>
+  <div class="chart-card">
+    <div class="chart-note"><strong>How to read this:</strong> The dark blue band is where most outcomes land
+    (25th–75th percentile). The lighter band captures 80% of all outcomes. The median line is the "middle" scenario.
+    The dotted line is your total investment — outcomes above it are profitable.</div>
+    {chart_i}
+    <div class="chart-caption">Based on historical return distribution (mean and standard deviation of daily returns).
+    This is not a forecast — actual results will differ. 1,000 simulations, ${daily_investment:.0f}/day.</div>
+  </div>
+  <div class="table-wrap" style="margin-top:24px">
+    <table>
+      <thead><tr>
+        <th>Horizon</th><th>Total Invested</th>
+        <th>Pessimistic (10th %ile)</th><th>Median (50th %ile)</th>
+        <th>Optimistic (90th %ile)</th><th>Probability of Profit</th>
+      </tr></thead>
+      <tbody>{mc_rows}</tbody>
+    </table>
   </div>
 </section>
 

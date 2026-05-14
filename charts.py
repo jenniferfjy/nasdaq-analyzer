@@ -186,3 +186,113 @@ def make_yearly_chart(yearly: dict) -> go.Figure:
     fig.update_yaxes(ticksuffix="%", row=2, col=1)
     _style_axes(fig, rows=2)
     return fig
+
+
+def make_frequency_chart(freq: dict) -> go.Figure:
+    fig = make_subplots(rows=1, cols=2,
+        subplot_titles=("Portfolio Value Over Time", "Final Portfolio Value"),
+        column_widths=[0.65, 0.35])
+
+    colors = {"daily": C["blue"], "weekly": C["clay"], "monthly": C["olive"]}
+    labels = {
+        "daily":   f"Daily (${freq['daily_usd']:.2f}/day)",
+        "weekly":  f"Weekly (${freq['weekly_usd']:.2f}/wk)",
+        "monthly": f"Monthly (${freq['monthly_usd']:.2f}/mo)",
+    }
+
+    final_vals = []
+    for key in ("daily", "weekly", "monthly"):
+        df = freq[key]
+        fig.add_trace(go.Scatter(
+            x=df.index, y=df["port_value"],
+            name=labels[key], line=dict(color=colors[key], width=2),
+        ), row=1, col=1)
+        final_vals.append(df["port_value"].iloc[-1])
+
+    fig.add_trace(go.Bar(
+        x=list(labels.values()), y=final_vals,
+        marker_color=[colors["daily"], colors["weekly"], colors["monthly"]],
+        marker_line_width=0, showlegend=False,
+        text=[f"${v:,.0f}" for v in final_vals], textposition="outside",
+    ), row=1, col=2)
+
+    fig.update_layout(height=400, **PLOT_LAYOUT)
+    fig.update_yaxes(tickprefix="$", row=1, col=1)
+    fig.update_yaxes(tickprefix="$", row=1, col=2)
+    _style_axes(fig)
+    return fig
+
+
+def make_recovery_chart(periods: list[dict]) -> go.Figure:
+    labels      = [p["label"] for p in periods]
+    to_trough   = [p["days_to_trough"] for p in periods]
+    to_recover  = [p["days_to_recover"] if p["days_to_recover"] else 0 for p in periods]
+    dd_labels   = [f"{p['max_drawdown_pct']:.1f}%" for p in periods]
+    ongoing     = [p["recovery_date"] is None for p in periods]
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        name="Peak → Trough", y=labels, x=to_trough,
+        orientation="h", marker_color=C["red"], marker_line_width=0,
+        text=dd_labels, textposition="inside", textfont=dict(color="white", size=11),
+    ))
+    fig.add_trace(go.Bar(
+        name="Trough → Recovery", y=labels,
+        x=[r if not o else None for r, o in zip(to_recover, ongoing)],
+        orientation="h", marker_color=C["olive"], marker_line_width=0,
+        text=["Ongoing" if o else f"{r}d" for r, o in zip(to_recover, ongoing)],
+        textposition="inside", textfont=dict(color="white", size=11),
+    ))
+
+    fig.update_layout(
+        barmode="stack", height=max(280, 80 * len(periods)),
+        xaxis=dict(title="Calendar days"),
+        **PLOT_LAYOUT,
+    )
+    _style_axes(fig)
+    return fig
+
+
+def make_monte_carlo_chart(mc: dict) -> go.Figure:
+    dates = mc["dates"]
+    fig = go.Figure()
+
+    # Outer band p10–p90
+    fig.add_trace(go.Scatter(
+        x=list(dates) + list(dates[::-1]),
+        y=list(mc["p90"]) + list(mc["p10"][::-1]),
+        fill="toself", fillcolor="rgba(59,111,212,0.10)",
+        line=dict(width=0), name="10th–90th percentile", showlegend=True,
+    ))
+    # Inner band p25–p75
+    fig.add_trace(go.Scatter(
+        x=list(dates) + list(dates[::-1]),
+        y=list(mc["p75"]) + list(mc["p25"][::-1]),
+        fill="toself", fillcolor="rgba(59,111,212,0.22)",
+        line=dict(width=0), name="25th–75th percentile", showlegend=True,
+    ))
+    # Median
+    fig.add_trace(go.Scatter(
+        x=dates, y=mc["p50"],
+        name="Median outcome", line=dict(color=C["blue"], width=2.5),
+    ))
+    # Cost basis
+    fig.add_trace(go.Scatter(
+        x=dates, y=mc["cost_basis"],
+        name="Total invested", line=dict(color=C["g500"], width=1.5, dash="dot"),
+    ))
+
+    # Milestone annotations
+    for years in mc["years_list"]:
+        idx = years * 252 - 1
+        fig.add_vline(x=dates[idx], line=dict(color=C["g300"], width=1, dash="dash"))
+        fig.add_annotation(
+            x=dates[idx], y=mc["p90"][idx],
+            text=f"{years}Y", showarrow=False,
+            font=dict(size=11, color=C["g500"]),
+            yshift=14,
+        )
+
+    fig.update_layout(height=440, yaxis=dict(tickprefix="$"), **PLOT_LAYOUT)
+    _style_axes(fig)
+    return fig

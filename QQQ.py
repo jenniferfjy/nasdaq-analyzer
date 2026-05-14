@@ -17,7 +17,8 @@ warnings.filterwarnings("ignore")
 import config
 from data       import fetch_prices
 from simulation import simulate_dca, simulate_lumpsum
-from analysis   import add_rolling_cagr, compute_summary, compute_win_rates, compute_yearly_returns
+from analysis   import (add_rolling_cagr, compute_summary, compute_win_rates, compute_yearly_returns,
+                        compute_dca_frequencies, compute_recovery_periods, run_monte_carlo)
 import charts as ch
 from report     import build_html
 
@@ -93,6 +94,9 @@ def main() -> None:
         compute_summary(qqq_ls,  "QQQ Lump-Sum"),
         compute_summary(spy_ls,  "SPY Lump-Sum"),
     ]
+    freq_data        = compute_dca_frequencies(prices["QQQ"], args.amount)
+    recovery_periods = compute_recovery_periods(prices["QQQ"])
+    mc               = run_monte_carlo(prices["QQQ"], args.amount)
 
     # ── Charts ─────────────────────────────────────────────────────────────────
     print("Building HTML report...")
@@ -102,6 +106,9 @@ def main() -> None:
     chart_d = ch.to_html(ch.make_winrate_chart(win_rates))
     chart_e = ch.to_html(ch.make_post2020_chart(qqq_dca_2020, spy_dca_2020))
     chart_f = ch.to_html(ch.make_yearly_chart(yearly_data))
+    chart_g = ch.to_html(ch.make_frequency_chart(freq_data))
+    chart_h = ch.to_html(ch.make_recovery_chart(recovery_periods))
+    chart_i = ch.to_html(ch.make_monte_carlo_chart(mc))
 
     # ── Report ─────────────────────────────────────────────────────────────────
     html = build_html(
@@ -109,6 +116,8 @@ def main() -> None:
         daily_investment=args.amount,
         chart_a=chart_a, chart_b=chart_b, chart_c=chart_c,
         chart_d=chart_d, chart_e=chart_e, chart_f=chart_f,
+        chart_g=chart_g, chart_h=chart_h, chart_i=chart_i,
+        mc=mc,
     )
 
     output_path = os.path.join(os.path.dirname(__file__), args.output)
