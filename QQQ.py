@@ -11,7 +11,9 @@ Usage:
 
 import argparse
 import os
+import sys
 import warnings
+from datetime import datetime
 warnings.filterwarnings("ignore")
 
 import config
@@ -39,9 +41,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def _validate_args(args: argparse.Namespace) -> None:
-    import sys
-    from datetime import datetime
-
     if args.amount <= 0:
         print(f"Error: --amount must be greater than 0 (got {args.amount})")
         sys.exit(1)

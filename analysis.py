@@ -148,7 +148,7 @@ def compute_recovery_periods(qqq_prices: pd.Series, min_drawdown: float = -15.0)
 def run_monte_carlo(
     prices:     pd.Series,
     daily_usd:  float,
-    years_list: list[int] = [10, 20, 30],
+    years_list: tuple[int, ...] = (10, 20, 30),
     n_sims:     int = 1000,
 ) -> dict:
     """Simulate future DCA returns by sampling from historical daily return distribution."""
@@ -158,9 +158,9 @@ def run_monte_carlo(
 
     max_years = max(years_list)
     n_days    = max_years * 252
-    np.random.seed(42)
+    rng       = np.random.default_rng(42)
 
-    sim_ret   = np.random.normal(mu, sigma, (n_sims, n_days))
+    sim_ret   = rng.normal(mu, sigma, (n_sims, n_days))
     price_paths = prices.iloc[-1] * np.cumprod(1 + sim_ret, axis=1)  # (n_sims, n_days)
     daily_shares = daily_usd / price_paths
     cum_shares   = np.cumsum(daily_shares, axis=1)

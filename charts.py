@@ -130,18 +130,15 @@ def make_post2020_chart(qqq_dca_2020: pd.DataFrame, spy_dca_2020: pd.DataFrame) 
         name="Cost Basis", line=dict(color=C["g500"], width=1.5, dash="dot")), row=1, col=1)
 
     for date_str, label, pos in _POST2020_EVENTS:
-        try:
-            dt      = pd.Timestamp(date_str)
-            idx     = qqq_dca_2020.index.searchsorted(dt)
-            nearest = qqq_dca_2020.index[min(idx, len(qqq_dca_2020) - 1)]
-            val     = qqq_dca_2020.loc[nearest, "port_value"]
-            ay      = 40 if pos == "above" else -40
-            fig.add_annotation(x=dt, y=val, text=label, showarrow=True,
-                arrowhead=2, arrowcolor=C["clay"], arrowsize=0.8,
-                font=dict(size=10, color=C["clay_d"]),
-                ax=0, ay=ay, row=1, col=1)
-        except Exception:
-            pass
+        dt      = pd.Timestamp(date_str)
+        idx     = qqq_dca_2020.index.searchsorted(dt)
+        nearest = qqq_dca_2020.index[min(idx, len(qqq_dca_2020) - 1)]
+        val     = qqq_dca_2020.loc[nearest, "port_value"]
+        ay      = 40 if pos == "above" else -40
+        fig.add_annotation(x=dt, y=val, text=label, showarrow=True,
+            arrowhead=2, arrowcolor=C["clay"], arrowsize=0.8,
+            font=dict(size=10, color=C["clay_d"]),
+            ax=0, ay=ay, row=1, col=1)
 
     fig.add_trace(go.Scatter(x=qqq_dca_2020.index, y=qqq_dca_2020["drawdown_pct"],
         name="QQQ Drawdown", fill="tozeroy",
